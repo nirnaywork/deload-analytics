@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const navLinks = [
   { label: 'Features', href: '#features' },
@@ -7,8 +8,9 @@ const navLinks = [
   { label: 'About', href: '#about' },
 ];
 
-function Navbar() {
+function Navbar({ onOpenAuth }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { currentUser, isAuthenticated, isAuthReady, logOut } = useAuth();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -18,6 +20,17 @@ function Navbar() {
   }, [isOpen]);
 
   const closeMenu = () => setIsOpen(false);
+  const accountLabel = currentUser?.displayName || currentUser?.email || 'Account';
+
+  const handleOpenAuth = (mode) => {
+    onOpenAuth(mode);
+    closeMenu();
+  };
+
+  const handleLogOut = async () => {
+    await logOut();
+    closeMenu();
+  };
 
   return (
     <header className="nav-surface sticky top-0 z-50 border-b border-grey-light backdrop-blur">
@@ -42,14 +55,33 @@ function Navbar() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-5 md:flex">
-          <a href="#login" className="text-sm font-medium text-black hover:text-taupe">
-            Login
-          </a>
-          <a href="#signup" className="primary-button min-h-10 px-5 py-2">
-            Sign Up
-          </a>
-        </div>
+        {isAuthReady && isAuthenticated ? (
+          <div className="hidden items-center gap-4 md:flex">
+            <span className="max-w-44 truncate text-sm font-medium text-taupe">
+              {accountLabel}
+            </span>
+            <button type="button" className="secondary-button min-h-10 px-5 py-2" onClick={handleLogOut}>
+              Log Out
+            </button>
+          </div>
+        ) : (
+          <div className="hidden items-center gap-5 md:flex">
+            <button
+              type="button"
+              className="text-sm font-medium text-black hover:text-taupe"
+              onClick={() => handleOpenAuth('login')}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              className="primary-button min-h-10 px-5 py-2"
+              onClick={() => handleOpenAuth('signup')}
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
 
         <button
           type="button"
@@ -78,22 +110,31 @@ function Navbar() {
               ))}
             </div>
 
-            <div className="grid gap-3">
-              <a
-                href="#login"
-                className="secondary-button w-full"
-                onClick={closeMenu}
-              >
-                Login
-              </a>
-              <a
-                href="#signup"
-                className="primary-button w-full"
-                onClick={closeMenu}
-              >
-                Sign Up
-              </a>
-            </div>
+            {isAuthReady && isAuthenticated ? (
+              <div className="grid gap-3">
+                <p className="truncate text-sm font-medium text-taupe">{accountLabel}</p>
+                <button type="button" className="secondary-button w-full" onClick={handleLogOut}>
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <button
+                  type="button"
+                  className="secondary-button w-full"
+                  onClick={() => handleOpenAuth('login')}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  className="primary-button w-full"
+                  onClick={() => handleOpenAuth('signup')}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

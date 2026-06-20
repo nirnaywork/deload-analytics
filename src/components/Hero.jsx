@@ -1,6 +1,6 @@
 import { ArrowRight, BarChart3, MessageSquareText, Sparkles } from 'lucide-react';
 
-function Hero() {
+function Hero({ onOpenAuth }) {
   return (
     <section id="top" className="overflow-hidden bg-white pb-20 pt-16 sm:pt-20 lg:pb-28 lg:pt-28">
       <div className="section-shell grid items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
@@ -16,10 +16,10 @@ function Hero() {
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <a href="#signup" className="primary-button">
+            <button type="button" className="primary-button" onClick={() => onOpenAuth('signup')}>
               Get Started Free
               <ArrowRight className="ml-2" size={18} aria-hidden="true" />
-            </a>
+            </button>
             <a href="#how-it-works" className="secondary-button">
               See How It Works
             </a>

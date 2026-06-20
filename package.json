@@ -11,6 +11,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
+    "firebase": "^12.15.0",
     "lucide-react": "^0.468.0",
     "postcss": "^8.5.6",
     "react": "^19.0.0",

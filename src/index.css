@@ -70,6 +70,15 @@ body {
   .soft-panel {
     background-color: rgba(236, 236, 236, 0.4);
   }
+
+  .modal-scrim {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  .notice-error {
+    background-color: #f6f1ee;
+    background-color: color-mix(in srgb, var(--color-blush) 30%, var(--color-white));
+  }
 }
 
 .reveal {
