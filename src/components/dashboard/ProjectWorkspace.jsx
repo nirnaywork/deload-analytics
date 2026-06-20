@@ -1,24 +1,28 @@
-import { useState, useCallback } from 'react';
-import UploadModal from './UploadModal';
+import { useState, useCallback, useEffect } from 'react';
 import OutputPanel from './OutputPanel';
 import ChatPanel from './ChatPanel';
+import NavigationRail from './NavigationRail';
+import SettingsModal from './SettingsModal';
 
 // Utility to generate a random ID
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export default function Dashboard() {
-  const [isDataUploaded, setIsDataUploaded] = useState(false);
+export default function ProjectWorkspace({ project, onNavigateHome, onLogout, onOpenProject }) {
   const [isThinking, setIsThinking] = useState(false);
   const [messages, setMessages] = useState([]);
   const [outputs, setOutputs] = useState([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // To cycle through different mock output types
   const [mockIndex, setMockIndex] = useState(0);
 
-  const handleUploadComplete = (file) => {
-    console.log("Uploaded file:", file);
-    setIsDataUploaded(true);
-  };
+  // Reset workspace when project changes
+  useEffect(() => {
+    setMessages([]);
+    setOutputs([]);
+    setIsThinking(false);
+    setMockIndex(0);
+  }, [project?.id]);
 
   const generateMockResponse = useCallback((question) => {
     // Cycle through: line chart -> table -> text -> bar chart
@@ -81,11 +85,21 @@ export default function Dashboard() {
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-white font-sans text-black">
-      {!isDataUploaded && (
-        <UploadModal onUploadComplete={handleUploadComplete} />
-      )}
       
-      <div className={`flex w-full h-full transition-opacity duration-700 ${isDataUploaded ? 'opacity-100' : 'opacity-0'}`}>
+      <NavigationRail 
+        onNavigateHome={onNavigateHome}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLogout={onLogout}
+      />
+
+      <div className="flex-1 flex w-full h-full relative">
+        {/* Top-left project name overlay */}
+        <div className="absolute top-6 left-8 z-10 pointer-events-none">
+          <h2 className="font-serif text-xl font-semibold text-black bg-white/80 backdrop-blur-sm px-2 py-1 rounded">
+            {project?.name || 'Untitled Project'}
+          </h2>
+        </div>
+
         <OutputPanel 
           outputs={outputs} 
           isThinking={isThinking} 
@@ -97,6 +111,13 @@ export default function Dashboard() {
           onSendMessage={handleSendMessage} 
         />
       </div>
+
+      {isSettingsOpen && (
+        <SettingsModal 
+          onClose={() => setIsSettingsOpen(false)} 
+          onOpenProject={onOpenProject}
+        />
+      )}
     </div>
   );
 }

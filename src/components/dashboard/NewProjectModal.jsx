@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { UploadCloud, FileSpreadsheet, X, CheckCircle, Loader2 } from 'lucide-react';
 
-export default function UploadModal({ onUploadComplete }) {
+export default function NewProjectModal({ onClose, onCreate }) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [projectName, setProjectName] = useState('');
   const [error, setError] = useState('');
   const [uploadState, setUploadState] = useState('idle'); // 'idle' | 'processing' | 'success'
   const [statusText, setStatusText] = useState('Checking for missing values...');
@@ -49,6 +50,10 @@ export default function UploadModal({ onUploadComplete }) {
       const file = e.dataTransfer.files[0];
       if (validateFile(file)) {
         setSelectedFile(file);
+        // Auto-fill project name from filename if empty
+        if (!projectName.trim()) {
+          setProjectName(file.name.replace(/\.[^/.]+$/, ""));
+        }
       }
     }
   };
@@ -59,12 +64,11 @@ export default function UploadModal({ onUploadComplete }) {
       const file = e.target.files[0];
       if (validateFile(file)) {
         setSelectedFile(file);
+        if (!projectName.trim()) {
+          setProjectName(file.name.replace(/\.[^/.]+$/, ""));
+        }
       }
     }
-  };
-
-  const onButtonClick = () => {
-    inputRef.current.click();
   };
 
   const formatFileSize = (bytes) => {
@@ -75,8 +79,8 @@ export default function UploadModal({ onUploadComplete }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleUpload = () => {
-    if (!selectedFile) return;
+  const handleSubmit = () => {
+    if (!selectedFile || !projectName.trim()) return;
     
     setUploadState('processing');
     
@@ -94,16 +98,50 @@ export default function UploadModal({ onUploadComplete }) {
     }, 3500);
   };
 
+  const handleFinish = () => {
+    onCreate({
+      id: Math.random().toString(36).substr(2, 9),
+      name: projectName.trim(),
+      timestamp: 'Just now',
+      file: selectedFile
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-scrim backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 transform transition-all">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 transform transition-all relative">
+        
+        {uploadState === 'idle' && (
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-taupe hover:text-black rounded-full hover:bg-gray-100 transition-colors"
+            title="Back to Home"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+
         {uploadState === 'idle' && (
           <div className="flex flex-col">
-            <h2 className="font-serif text-3xl font-semibold mb-2 text-black">Let's get your data ready</h2>
-            <p className="text-taupe mb-8">Upload a CSV or Excel file to begin analyzing your data with AI.</p>
+            <h2 className="font-serif text-3xl font-semibold mb-2 text-black">New Project</h2>
+            <p className="text-taupe mb-8">Upload a dataset to start analyzing.</p>
+
+            <div className="mb-6">
+              <label htmlFor="projectName" className="block text-sm font-medium text-black mb-2">
+                Project Name
+              </label>
+              <input
+                id="projectName"
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="e.g. Q3 Sales Data"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-taupe focus:ring-1 focus:ring-taupe text-sm text-black"
+              />
+            </div>
 
             <div
-              className={`relative flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-lg transition-colors ${
+              className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
                 dragActive ? 'border-taupe bg-blush/20' : 'border-gray-300 hover:border-taupe bg-gray-50'
               }`}
               onDragEnter={handleDrag}
@@ -121,20 +159,20 @@ export default function UploadModal({ onUploadComplete }) {
               
               {!selectedFile ? (
                 <>
-                  <UploadCloud className="w-12 h-12 text-taupe mb-4" />
-                  <p className="text-black font-medium mb-1">Drag and drop your file here</p>
-                  <p className="text-sm text-taupe mb-4">Supported formats: CSV, XLSX</p>
+                  <UploadCloud className="w-10 h-10 text-taupe mb-3" />
+                  <p className="text-black text-sm font-medium mb-1">Drag and drop your file here</p>
+                  <p className="text-xs text-taupe mb-4">Supported formats: CSV, XLSX</p>
                   <button 
-                    onClick={onButtonClick}
-                    className="secondary-button !min-h-10 !py-2 !px-4"
+                    onClick={() => inputRef.current.click()}
+                    className="secondary-button !min-h-10 !py-2 !px-4 text-xs"
                   >
                     Browse files
                   </button>
                 </>
               ) : (
                 <div className="flex flex-col items-center w-full">
-                  <div className="flex items-center space-x-3 bg-white p-4 rounded-md shadow-sm border border-gray-200 w-full mb-4">
-                    <FileSpreadsheet className="w-8 h-8 text-black" />
+                  <div className="flex items-center space-x-3 bg-white p-3 rounded-md shadow-sm border border-gray-200 w-full mb-2">
+                    <FileSpreadsheet className="w-6 h-6 text-black" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-black truncate">{selectedFile.name}</p>
                       <p className="text-xs text-taupe">{formatFileSize(selectedFile.size)}</p>
@@ -143,7 +181,7 @@ export default function UploadModal({ onUploadComplete }) {
                       onClick={() => setSelectedFile(null)}
                       className="p-1 text-taupe hover:text-black transition-colors"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -158,11 +196,11 @@ export default function UploadModal({ onUploadComplete }) {
 
             <div className="mt-8">
               <button
-                onClick={handleUpload}
-                disabled={!selectedFile}
-                className={`w-full primary-button ${!selectedFile ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleSubmit}
+                disabled={!selectedFile || !projectName.trim()}
+                className={`w-full primary-button ${(!selectedFile || !projectName.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Upload & Analyze
+                Create Project
               </button>
             </div>
           </div>
@@ -184,16 +222,10 @@ export default function UploadModal({ onUploadComplete }) {
             <div className="w-16 h-16 bg-blush rounded-full flex items-center justify-center mb-6">
               <CheckCircle className="w-8 h-8 text-black" />
             </div>
-            <h3 className="font-serif text-3xl font-semibold mb-3">Your data is ready!</h3>
-            <div className="flex space-x-4 mb-8 text-sm text-taupe bg-gray-50 px-6 py-3 rounded-md border border-gray-100">
-              <span><strong>1,204</strong> rows</span>
-              <span>•</span>
-              <span><strong>8</strong> columns</span>
-              <span>•</span>
-              <span className="text-black"><strong>3</strong> issues auto-fixed</span>
-            </div>
+            <h3 className="font-serif text-3xl font-semibold mb-3">Project created!</h3>
+            <p className="text-taupe mb-8">"{projectName}" is ready for analysis.</p>
             <button
-              onClick={() => onUploadComplete(selectedFile)}
+              onClick={handleFinish}
               className="w-full primary-button"
             >
               Start Analyzing

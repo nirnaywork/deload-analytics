@@ -8,7 +8,7 @@ const navLinks = [
   { label: 'About', href: '#about' },
 ];
 
-function Navbar({ onOpenAuth, onDemoDashboard }) {
+function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
   const [isOpen, setIsOpen] = useState(false);
   const { currentUser, isAuthenticated, isAuthReady, logOut } = useAuth();
 
@@ -60,7 +60,10 @@ function Navbar({ onOpenAuth, onDemoDashboard }) {
             <span className="max-w-44 truncate text-sm font-medium text-taupe">
               {accountLabel}
             </span>
-            <button type="button" className="secondary-button min-h-10 px-5 py-2" onClick={handleLogOut}>
+            <button type="button" className="secondary-button min-h-10 px-5 py-2" onClick={onGoToDashboard}>
+              Dashboard
+            </button>
+            <button type="button" className="text-sm font-medium text-black hover:text-taupe" onClick={handleLogOut}>
               Log Out
             </button>
           </div>
@@ -73,13 +76,23 @@ function Navbar({ onOpenAuth, onDemoDashboard }) {
             >
               Login
             </button>
-            <button
-              type="button"
-              className="secondary-button min-h-10 px-5 py-2"
-              onClick={onDemoDashboard}
-            >
-              Simulate Login
-            </button>
+            {isDemo ? (
+              <button
+                type="button"
+                className="secondary-button min-h-10 px-5 py-2"
+                onClick={onGoToDashboard}
+              >
+                Dashboard
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="secondary-button min-h-10 px-5 py-2"
+                onClick={onSimulateLogin}
+              >
+                Simulate Login
+              </button>
+            )}
             <button
               type="button"
               className="primary-button min-h-10 px-5 py-2"
@@ -120,7 +133,10 @@ function Navbar({ onOpenAuth, onDemoDashboard }) {
             {isAuthReady && isAuthenticated ? (
               <div className="grid gap-3">
                 <p className="truncate text-sm font-medium text-taupe">{accountLabel}</p>
-                <button type="button" className="secondary-button w-full" onClick={handleLogOut}>
+                <button type="button" className="secondary-button w-full" onClick={() => { onGoToDashboard(); closeMenu(); }}>
+                  Dashboard
+                </button>
+                <button type="button" className="text-sm font-medium text-black hover:text-taupe w-full py-2" onClick={handleLogOut}>
                   Log Out
                 </button>
               </div>
@@ -133,16 +149,29 @@ function Navbar({ onOpenAuth, onDemoDashboard }) {
                 >
                   Login
                 </button>
-                <button
-                  type="button"
-                  className="secondary-button w-full"
-                  onClick={() => {
-                    onDemoDashboard();
-                    closeMenu();
-                  }}
-                >
-                  Simulate Login
-                </button>
+                {isDemo ? (
+                  <button
+                    type="button"
+                    className="secondary-button w-full"
+                    onClick={() => {
+                      onGoToDashboard();
+                      closeMenu();
+                    }}
+                  >
+                    Dashboard
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary-button w-full"
+                    onClick={() => {
+                      onSimulateLogin();
+                      closeMenu();
+                    }}
+                  >
+                    Simulate Login
+                  </button>
+                )}
                 <button
                   type="button"
                   className="primary-button w-full"

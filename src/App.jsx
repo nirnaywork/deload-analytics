@@ -8,12 +8,15 @@ import Footer from './components/Footer.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import useScrollReveal from './hooks/useScrollReveal.js';
-import Dashboard from './components/dashboard/Dashboard.jsx';
+import DashboardHome from './components/dashboard/DashboardHome.jsx';
+import ProjectWorkspace from './components/dashboard/ProjectWorkspace.jsx';
 
 function AppContent() {
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
   const [demoDashboard, setDemoDashboard] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const [activeProject, setActiveProject] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(true);
+  const { isAuthenticated, logOut, currentUser } = useAuth();
 
   useScrollReveal();
 
@@ -25,13 +28,47 @@ function AppContent() {
     setAuthModal((current) => ({ ...current, isOpen: false }));
   };
 
-  if (isAuthenticated || demoDashboard) {
-    return <Dashboard />;
+  const handleLogout = async () => {
+    if (isAuthenticated) {
+      await logOut();
+    }
+    setDemoDashboard(false);
+    setActiveProject(null);
+    setShowDashboard(false);
+  };
+
+  const handleSimulateLogin = () => {
+    setDemoDashboard(true);
+    setShowDashboard(true);
+  };
+
+  if ((isAuthenticated || demoDashboard) && showDashboard) {
+    if (activeProject) {
+      return (
+        <ProjectWorkspace 
+          project={activeProject} 
+          onNavigateHome={() => setActiveProject(null)} 
+          onLogout={handleLogout}
+          onOpenProject={setActiveProject}
+        />
+      );
+    }
+    return <DashboardHome 
+      onOpenProject={setActiveProject} 
+      onNavigateMarketing={() => setShowDashboard(false)} 
+      onLogout={handleLogout}
+      userEmail={currentUser?.email || 'demo@example.com'}
+    />;
   }
 
   return (
     <div className="min-h-screen bg-white font-sans text-black">
-      <Navbar onOpenAuth={openAuthModal} onDemoDashboard={() => setDemoDashboard(true)} />
+      <Navbar 
+        onOpenAuth={openAuthModal} 
+        onSimulateLogin={handleSimulateLogin} 
+        onGoToDashboard={() => setShowDashboard(true)}
+        isDemo={demoDashboard}
+      />
       <main>
           <Hero onOpenAuth={openAuthModal} />
           <Features />
