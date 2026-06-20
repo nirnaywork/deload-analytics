@@ -41,12 +41,12 @@ export default function SettingsModal({ onClose, onOpenProject }) {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[600px] flex overflow-hidden transform transition-all relative">
         
         {/* Sidebar */}
-        <div className="w-48 bg-gray-50 border-r border-gray-200 p-4 flex flex-col space-y-2">
+        <div className="w-48 bg-grey-light border-r border-grey-light p-4 flex flex-col space-y-2">
           <h2 className="font-serif text-xl font-semibold mb-4 px-2">Settings</h2>
           
           <button 
             onClick={() => setActiveTab('appearance')}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'appearance' ? 'bg-gray-200 text-black' : 'text-taupe hover:bg-gray-100 hover:text-black'}`}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'appearance' ? 'bg-grey-light text-black' : 'text-taupe hover:bg-grey-light hover:text-black'}`}
           >
             <Sun className="w-4 h-4" />
             <span>Appearance</span>
@@ -54,7 +54,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
           
           <button 
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-gray-200 text-black' : 'text-taupe hover:bg-gray-100 hover:text-black'}`}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-grey-light text-black' : 'text-taupe hover:bg-grey-light hover:text-black'}`}
           >
             <User className="w-4 h-4" />
             <span>Profile</span>
@@ -62,7 +62,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
           
           <button 
             onClick={() => setActiveTab('history')}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'history' ? 'bg-gray-200 text-black' : 'text-taupe hover:bg-gray-100 hover:text-black'}`}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'history' ? 'bg-grey-light text-black' : 'text-taupe hover:bg-grey-light hover:text-black'}`}
           >
             <Clock className="w-4 h-4" />
             <span>Project History</span>
@@ -73,7 +73,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
         <div className="flex-1 p-8 overflow-y-auto bg-white relative">
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-taupe hover:text-black rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute top-4 right-4 p-2 text-taupe hover:text-black rounded-full hover:bg-grey-light transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -86,7 +86,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
               <div className="grid grid-cols-2 gap-4 max-w-md">
                 <button 
                   onClick={() => handleSetTheme('light')}
-                  className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'light' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-taupe'}`}
+                  className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'light' ? 'border-black bg-grey-light' : 'border-grey-light hover:border-taupe'}`}
                 >
                   <Sun className={`w-8 h-8 mb-2 ${theme === 'light' ? 'text-black' : 'text-taupe'}`} />
                   <span className={`font-medium ${theme === 'light' ? 'text-black' : 'text-taupe'}`}>Light Mode</span>
@@ -94,7 +94,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                 
                 <button 
                   onClick={() => handleSetTheme('dark')}
-                  className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'dark' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-taupe'}`}
+                  className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'dark' ? 'border-black bg-grey-light' : 'border-grey-light hover:border-taupe'}`}
                 >
                   <Moon className={`w-8 h-8 mb-2 ${theme === 'dark' ? 'text-black' : 'text-taupe'}`} />
                   <span className={`font-medium ${theme === 'dark' ? 'text-black' : 'text-taupe'}`}>Dark Mode</span>
@@ -113,7 +113,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                     type="text" 
                     value={profile.name}
                     onChange={(e) => setProfile({...profile, name: e.target.value})}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:border-taupe text-sm"
+                    className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
                   />
                 </div>
                 <div>
@@ -122,7 +122,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                     type="text" 
                     value={profile.company}
                     onChange={(e) => setProfile({...profile, company: e.target.value})}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:border-taupe text-sm"
+                    className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
                   />
                 </div>
                 <div>
@@ -131,7 +131,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                     type="email" 
                     value={profile.email}
                     disabled
-                    className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-taupe text-sm cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md text-taupe text-sm cursor-not-allowed"
                   />
                   <p className="text-xs text-taupe mt-1">Email cannot be changed here.</p>
                 </div>
@@ -156,7 +156,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                       onClose();
                       onOpenProject(project);
                     }}
-                    className="flex items-center w-full p-4 border border-gray-200 rounded-xl hover:border-black hover:shadow-sm transition-all duration-300 text-left bg-white group"
+                    className="flex items-center w-full p-4 border border-grey-light rounded-xl hover:border-black hover:shadow-sm transition-all duration-300 text-left bg-white group"
                   >
                     <div className="p-2 bg-blush/20 rounded-md mr-4 group-hover:bg-blush/40 transition-colors">
                       <FileSpreadsheet className="w-5 h-5 text-black" />

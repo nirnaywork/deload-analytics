@@ -114,7 +114,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
         {uploadState === 'idle' && (
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-taupe hover:text-black rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute top-4 right-4 p-2 text-taupe hover:text-black rounded-full hover:bg-grey-light transition-colors"
             title="Back to Home"
           >
             <X className="w-5 h-5" />
@@ -136,13 +136,13 @@ export default function NewProjectModal({ onClose, onCreate }) {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="e.g. Q3 Sales Data"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-taupe focus:ring-1 focus:ring-taupe text-sm text-black"
+                className="w-full px-4 py-3 bg-grey-light border border-grey-light rounded-lg focus:outline-none focus:border-taupe focus:ring-1 focus:ring-taupe text-sm text-black"
               />
             </div>
 
             <div
               className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
-                dragActive ? 'border-taupe bg-blush/20' : 'border-gray-300 hover:border-taupe bg-gray-50'
+                dragActive ? 'border-taupe bg-blush/20' : 'border-grey-light hover:border-taupe bg-grey-light'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -171,7 +171,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
                 </>
               ) : (
                 <div className="flex flex-col items-center w-full">
-                  <div className="flex items-center space-x-3 bg-white p-3 rounded-md shadow-sm border border-gray-200 w-full mb-2">
+                  <div className="flex items-center space-x-3 bg-white p-3 rounded-md shadow-sm border border-grey-light w-full mb-2">
                     <FileSpreadsheet className="w-6 h-6 text-black" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-black truncate">{selectedFile.name}</p>
@@ -211,7 +211,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
             <Loader2 className="w-12 h-12 text-black animate-spin mb-6" />
             <h3 className="font-serif text-2xl font-semibold mb-2">Cleaning your data...</h3>
             <p className="text-taupe transition-all duration-300">{statusText}</p>
-            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-8 overflow-hidden">
+            <div className="w-full bg-grey-light rounded-full h-1.5 mt-8 overflow-hidden">
               <div className="bg-black h-1.5 rounded-full animate-pulse w-full"></div>
             </div>
           </div>

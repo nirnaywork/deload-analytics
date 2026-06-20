@@ -21,16 +21,16 @@ export default function DashboardHome({ onOpenProject, onNavigateMarketing, onLo
   return (
     <div className="min-h-screen bg-white font-sans text-black flex flex-col">
       {/* Top Navigation */}
-      <header className="w-full border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white z-10 relative">
+      <header className="w-full border-b border-grey-light px-6 py-4 flex items-center justify-between bg-white z-10 relative">
         <button onClick={onNavigateMarketing} className="font-serif text-xl font-semibold hover:text-taupe transition-colors">
           Deload Analytics
         </button>
         <div className="relative">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
+            className="flex items-center space-x-2 hover:bg-grey-light px-3 py-2 rounded-md transition-colors"
           >
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-grey-light rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-taupe" />
             </div>
             <span className="text-sm font-medium hidden sm:block">{userEmail}</span>
@@ -38,10 +38,10 @@ export default function DashboardHome({ onOpenProject, onNavigateMarketing, onLo
           </button>
           
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-20">
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-grey-light rounded-md shadow-lg py-1 z-20">
               <button 
                 onClick={onLogout}
-                className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-black hover:bg-grey-light flex items-center space-x-2"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
@@ -86,7 +86,7 @@ export default function DashboardHome({ onOpenProject, onNavigateMarketing, onLo
           </div>
 
           {!hasProjects ? (
-            <div className="flex items-center justify-center py-16 bg-gray-50/50 rounded-xl border border-gray-100">
+            <div className="flex items-center justify-center py-16 bg-grey-light/50 rounded-xl border border-grey-light">
               <p className="text-taupe">No previous projects, try creating one.</p>
             </div>
           ) : (
@@ -95,7 +95,7 @@ export default function DashboardHome({ onOpenProject, onNavigateMarketing, onLo
                 <button
                   key={project.id}
                   onClick={() => onOpenProject(project)}
-                  className="flex flex-col items-start p-5 border border-gray-200 rounded-xl hover:border-black hover:shadow-sm transition-all duration-300 text-left bg-white group"
+                  className="flex flex-col items-start p-5 border border-grey-light rounded-xl hover:border-black hover:shadow-sm transition-all duration-300 text-left bg-white group"
                 >
                   <div className="p-2 bg-blush/20 rounded-md mb-4 group-hover:bg-blush/40 transition-colors">
                     <FileSpreadsheet className="w-5 h-5 text-black" />

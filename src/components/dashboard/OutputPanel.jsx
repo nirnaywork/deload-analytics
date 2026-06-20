@@ -69,9 +69,9 @@ function ChartResult({ type }) {
 
 function TableResult() {
   return (
-    <div className="mt-4 overflow-x-auto border border-gray-200 rounded-lg">
+    <div className="mt-4 overflow-x-auto border border-grey-light rounded-lg">
       <table className="w-full text-sm text-left text-black">
-        <thead className="text-xs uppercase bg-gray-50 border-b border-gray-200 text-taupe font-semibold">
+        <thead className="text-xs uppercase bg-grey-light border-b border-grey-light text-taupe font-semibold">
           <tr>
             <th className="px-6 py-3">Region</th>
             <th className="px-6 py-3">Active Users</th>
@@ -80,7 +80,7 @@ function TableResult() {
         </thead>
         <tbody>
           {MOCK_TABLE_DATA.map((row, i) => (
-            <tr key={row.id} className={i !== MOCK_TABLE_DATA.length - 1 ? 'border-b border-gray-100' : ''}>
+            <tr key={row.id} className={i !== MOCK_TABLE_DATA.length - 1 ? 'border-b border-grey-light' : ''}>
               <td className="px-6 py-4 font-medium">{row.region}</td>
               <td className="px-6 py-4">{row.users}</td>
               <td className="px-6 py-4">{row.conversion}</td>
@@ -119,7 +119,7 @@ export default function OutputPanel({ outputs, isThinking, onSuggestionClick }) 
                 <button
                   key={idx}
                   onClick={() => onSuggestionClick(suggestion)}
-                  className="flex items-center space-x-2 bg-gray-50 border border-gray-200 hover:border-black hover:bg-white text-black px-4 py-3 rounded-full text-sm font-medium transition-all duration-300 hover:shadow-sm"
+                  className="flex items-center space-x-2 bg-grey-light border border-grey-light hover:border-black hover:bg-white text-black px-4 py-3 rounded-full text-sm font-medium transition-all duration-300 hover:shadow-sm"
                 >
                   <span>{suggestion}</span>
                   <ArrowRight className="w-4 h-4 text-taupe" />
@@ -135,7 +135,7 @@ export default function OutputPanel({ outputs, isThinking, onSuggestionClick }) 
                   <h3 className="font-serif text-2xl font-semibold text-black">{output.question}</h3>
                 </div>
                 
-                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="bg-white border border-grey-light rounded-xl p-6 shadow-sm">
                   {output.type === 'text' && (
                     <div className="prose prose-sm max-w-none text-black leading-relaxed">
                       <p>{output.data}</p>

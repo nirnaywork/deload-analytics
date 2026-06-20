@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const navLinks = [
@@ -10,7 +10,29 @@ const navLinks = [
 
 function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [theme, setTheme] = useState(
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
   const { currentUser, isAuthenticated, isAuthReady, logOut } = useAuth();
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -60,6 +82,9 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
             <span className="max-w-44 truncate text-sm font-medium text-taupe">
               {accountLabel}
             </span>
+            <button type="button" onClick={toggleTheme} className="text-black hover:text-taupe transition-colors p-2" aria-label="Toggle theme">
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button type="button" className="secondary-button min-h-10 px-5 py-2" onClick={onGoToDashboard}>
               Dashboard
             </button>
@@ -69,6 +94,9 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
           </div>
         ) : (
           <div className="hidden items-center gap-5 md:flex">
+            <button type="button" onClick={toggleTheme} className="text-black hover:text-taupe transition-colors p-2" aria-label="Toggle theme">
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button
               type="button"
               className="text-sm font-medium text-black hover:text-taupe"
@@ -132,6 +160,10 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
 
             {isAuthReady && isAuthenticated ? (
               <div className="grid gap-3">
+                <button type="button" className="flex items-center justify-center space-x-2 secondary-button w-full" onClick={toggleTheme}>
+                  {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
                 <p className="truncate text-sm font-medium text-taupe">{accountLabel}</p>
                 <button type="button" className="secondary-button w-full" onClick={() => { onGoToDashboard(); closeMenu(); }}>
                   Dashboard
@@ -142,6 +174,10 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
               </div>
             ) : (
               <div className="grid gap-3">
+                <button type="button" className="flex items-center justify-center space-x-2 secondary-button w-full" onClick={toggleTheme}>
+                  {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
                 <button
                   type="button"
                   className="secondary-button w-full"

@@ -12,12 +12,39 @@
   --color-black: #000000;
 }
 
-.dark {
+:root.dark, .dark {
+  color-scheme: dark;
   --color-white: #18181b;
   --color-grey-light: #27272a;
   --color-blush: #52525b;
   --color-taupe: #a1a1aa;
   --color-black: #fafafa;
+}
+
+/* Foolproof dark mode overrides in case Tailwind config is cached */
+.dark body {
+  background-color: var(--color-white) !important;
+  color: var(--color-black) !important;
+}
+
+.dark .bg-white { background-color: var(--color-white) !important; }
+.dark .text-black { color: var(--color-black) !important; }
+.dark .bg-black { background-color: var(--color-black) !important; }
+.dark .text-white { color: var(--color-white) !important; }
+.dark .bg-grey-light { background-color: var(--color-grey-light) !important; }
+.dark .border-grey-light { border-color: var(--color-grey-light) !important; }
+.dark .text-taupe { color: var(--color-taupe) !important; }
+.dark .bg-blush { background-color: var(--color-blush) !important; }
+.dark .border-black { border-color: var(--color-black) !important; }
+
+.dark input, .dark textarea {
+  color: var(--color-black) !important;
+  background-color: var(--color-grey-light) !important;
+}
+
+.dark ::placeholder {
+  color: var(--color-taupe) !important;
+  opacity: 1;
 }
 
 html {
@@ -72,6 +99,9 @@ body {
 
   .nav-surface {
     background-color: rgba(255, 255, 255, 0.95);
+  }
+  .dark .nav-surface {
+    background-color: rgba(24, 24, 27, 0.95) !important;
   }
 
   .soft-panel {

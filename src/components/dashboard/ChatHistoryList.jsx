@@ -13,9 +13,9 @@ export default function ChatHistoryList() {
   const [activeSession, setActiveSession] = useState('1');
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-grey-light">
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-grey-light transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center space-x-2 overflow-hidden">
@@ -29,7 +29,7 @@ export default function ChatHistoryList() {
 
       {isExpanded && (
         <div className="px-2 pb-4 max-h-64 overflow-y-auto">
-          <button className="flex items-center space-x-2 w-full p-2 mb-2 rounded-md hover:bg-gray-100 text-sm font-medium transition-colors text-black">
+          <button className="flex items-center space-x-2 w-full p-2 mb-2 rounded-md hover:bg-grey-light text-sm font-medium transition-colors text-black">
             <Plus className="w-4 h-4" />
             <span>New Chat</span>
           </button>
@@ -43,10 +43,10 @@ export default function ChatHistoryList() {
                   setIsExpanded(false);
                 }}
                 className={`flex flex-col items-start w-full p-2 rounded-md transition-colors text-left ${
-                  activeSession === session.id ? 'bg-blush/30' : 'hover:bg-gray-100'
+                  activeSession === session.id ? 'bg-blush/30' : 'hover:bg-grey-light'
                 }`}
               >
-                <span className={`text-sm truncate w-full ${activeSession === session.id ? 'font-medium text-black' : 'text-gray-700'}`}>
+                <span className={`text-sm truncate w-full ${activeSession === session.id ? 'font-medium text-black' : 'text-taupe'}`}>
                   {session.title}
                 </span>
                 <span className="text-xs text-taupe mt-0.5">{session.timestamp}</span>

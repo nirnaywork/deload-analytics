@@ -20,7 +20,7 @@ export default function ChatInput({ onSubmit, disabled }) {
   };
 
   return (
-    <div className="p-4 bg-white border-t border-gray-200">
+    <div className="p-4 bg-white border-t border-grey-light">
       <form onSubmit={handleSubmit} className="relative">
         <textarea
           value={inputValue}
@@ -29,13 +29,13 @@ export default function ChatInput({ onSubmit, disabled }) {
           placeholder="Ask a question about your data..."
           disabled={disabled}
           rows={1}
-          className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-taupe focus:ring-1 focus:ring-taupe text-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed text-black"
+          className="w-full pl-4 pr-12 py-3 bg-grey-light border border-grey-light rounded-lg focus:outline-none focus:border-taupe focus:ring-1 focus:ring-taupe text-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed text-black"
           style={{ minHeight: '46px', maxHeight: '120px' }}
         />
         <button
           type="submit"
           disabled={!inputValue.trim() || disabled}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-taupe hover:text-black hover:bg-gray-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-taupe transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-taupe hover:text-black hover:bg-grey-light disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-taupe transition-colors"
         >
           <Send className="w-4 h-4" />
         </button>
