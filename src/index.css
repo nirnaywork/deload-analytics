@@ -12,6 +12,14 @@
   --color-black: #000000;
 }
 
+.dark {
+  --color-white: #18181b;
+  --color-grey-light: #27272a;
+  --color-blush: #52525b;
+  --color-taupe: #a1a1aa;
+  --color-black: #fafafa;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -59,8 +67,7 @@ body {
   }
 
   .section-blush {
-    background-color: #f6f1ee;
-    background-color: color-mix(in srgb, var(--color-blush) 26%, var(--color-white));
+    background-color: var(--color-blush);
   }
 
   .nav-surface {
@@ -76,8 +83,7 @@ body {
   }
 
   .notice-error {
-    background-color: #f6f1ee;
-    background-color: color-mix(in srgb, var(--color-blush) 30%, var(--color-white));
+    background-color: var(--color-blush);
   }
 }
 

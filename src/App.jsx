@@ -18,7 +18,7 @@ function AppContent() {
   const [showDashboard, setShowDashboard] = useState(true);
   const { isAuthenticated, logOut, currentUser } = useAuth();
 
-  useScrollReveal();
+  useScrollReveal([showDashboard]);
 
   const openAuthModal = (mode) => {
     setAuthModal({ isOpen: true, mode });

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
-function useScrollReveal() {
+function useScrollReveal(dependencies = []) {
   useEffect(() => {
-    const elements = document.querySelectorAll('[data-reveal]');
+    const elements = document.querySelectorAll('[data-reveal], .reveal');
 
     if (!('IntersectionObserver' in window)) {
       elements.forEach((element) => element.classList.add('is-visible'));
@@ -24,7 +24,7 @@ function useScrollReveal() {
     elements.forEach((element) => observer.observe(element));
 
     return () => observer.disconnect();
-  }, []);
+  }, dependencies);
 }
 
 export default useScrollReveal;

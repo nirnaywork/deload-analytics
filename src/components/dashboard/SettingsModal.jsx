@@ -9,7 +9,18 @@ const MOCK_PROJECTS = [
 
 export default function SettingsModal({ onClose, onOpenProject }) {
   const [activeTab, setActiveTab] = useState('appearance');
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    return typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
+
+  const handleSetTheme = (newTheme) => {
+    setTheme(newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
   
   // Mock User State
   const [profile, setProfile] = useState({
@@ -74,7 +85,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
               
               <div className="grid grid-cols-2 gap-4 max-w-md">
                 <button 
-                  onClick={() => setTheme('light')}
+                  onClick={() => handleSetTheme('light')}
                   className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'light' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-taupe'}`}
                 >
                   <Sun className={`w-8 h-8 mb-2 ${theme === 'light' ? 'text-black' : 'text-taupe'}`} />
@@ -82,7 +93,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                 </button>
                 
                 <button 
-                  onClick={() => setTheme('dark')}
+                  onClick={() => handleSetTheme('dark')}
                   className={`flex flex-col items-center justify-center p-6 border-2 rounded-xl transition-all ${theme === 'dark' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-taupe'}`}
                 >
                   <Moon className={`w-8 h-8 mb-2 ${theme === 'dark' ? 'text-black' : 'text-taupe'}`} />
