@@ -8,7 +8,7 @@ const navLinks = [
   { label: 'About', href: '#about' },
 ];
 
-function Navbar({ onOpenAuth }) {
+function Navbar({ onOpenAuth, onDemoDashboard }) {
   const [isOpen, setIsOpen] = useState(false);
   const { currentUser, isAuthenticated, isAuthReady, logOut } = useAuth();
 
@@ -75,6 +75,13 @@ function Navbar({ onOpenAuth }) {
             </button>
             <button
               type="button"
+              className="secondary-button min-h-10 px-5 py-2"
+              onClick={onDemoDashboard}
+            >
+              Simulate Login
+            </button>
+            <button
+              type="button"
               className="primary-button min-h-10 px-5 py-2"
               onClick={() => handleOpenAuth('signup')}
             >
@@ -125,6 +132,16 @@ function Navbar({ onOpenAuth }) {
                   onClick={() => handleOpenAuth('login')}
                 >
                   Login
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button w-full"
+                  onClick={() => {
+                    onDemoDashboard();
+                    closeMenu();
+                  }}
+                >
+                  Simulate Login
                 </button>
                 <button
                   type="button"
