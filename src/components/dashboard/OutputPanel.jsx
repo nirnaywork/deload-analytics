@@ -38,7 +38,7 @@ function InitialOverview({ aiData }) {
             <span className="px-3 py-1 bg-white border border-grey-light rounded-full">
               Health: {data?.metrics?.overallHealthScore ?? 0}/100
             </span>
-            <span className={\`px-3 py-1 rounded-full \${getPriorityColor(data?.metrics?.priority)}\`}>
+            <span className={`px-3 py-1 rounded-full ${getPriorityColor(data?.metrics?.priority)}`}>
               {data?.metrics?.priority} Priority
             </span>
           </div>
@@ -55,7 +55,7 @@ function InitialOverview({ aiData }) {
           <div className="space-y-3">
             {data.insights?.map((insight, idx) => (
               <div key={idx} className="flex items-start space-x-3 p-3 bg-grey-light/50 rounded-lg">
-                <div className={\`w-2 h-2 mt-2 rounded-full \${getSeverityColor(insight.severity)}\`} />
+                <div className={`w-2 h-2 mt-2 rounded-full ${getSeverityColor(insight.severity)}`} />
                 <div>
                   <h6 className="font-medium text-sm">{insight.title}</h6>
                   <p className="text-xs text-taupe mt-1">{insight.description}</p>

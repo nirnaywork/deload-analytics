@@ -23,9 +23,7 @@ export default function OnboardingModal({ onComplete }) {
       const { error: dbError } = await supabase
         .from('profiles')
         .update({
-          company: form.company,
-          description: form.description,
-          location: form.location
+          company: form.company
         })
         .eq('id', currentUser.id);
 

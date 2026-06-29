@@ -71,14 +71,22 @@ function AuthModal({ initialMode = 'login', isOpen, onClose }) {
 
     try {
       if (isSignup) {
-        await signUp(form);
+        const { session } = await signUp(form);
+        if (!session) {
+          setStatusMessage('Verification sent to your Mail!');
+          return; // Don't close the modal yet so they can see the message
+        }
       } else {
         await logIn(form);
       }
 
       onClose();
     } catch (error) {
-      setErrorMessage(error.message);
+      if (error.message.includes('Email not confirmed')) {
+        setErrorMessage('Email not confirmed. Verification sent to your Mail!');
+      } else {
+        setErrorMessage(error.message);
+      }
     } finally {
       setIsSubmitting(false);
     }

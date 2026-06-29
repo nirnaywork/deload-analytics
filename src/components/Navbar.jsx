@@ -8,7 +8,7 @@ const navLinks = [
   { label: 'About', href: '#about' },
 ];
 
-function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
+function Navbar({ onOpenAuth, onGoToDashboard }) {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState(
     typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
@@ -104,23 +104,6 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
             >
               Login
             </button>
-            {isDemo ? (
-              <button
-                type="button"
-                className="secondary-button min-h-10 px-5 py-2"
-                onClick={onGoToDashboard}
-              >
-                Dashboard
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="secondary-button min-h-10 px-5 py-2"
-                onClick={onSimulateLogin}
-              >
-                Simulate Login
-              </button>
-            )}
             <button
               type="button"
               className="primary-button min-h-10 px-5 py-2"
@@ -185,29 +168,6 @@ function Navbar({ onOpenAuth, onSimulateLogin, onGoToDashboard, isDemo }) {
                 >
                   Login
                 </button>
-                {isDemo ? (
-                  <button
-                    type="button"
-                    className="secondary-button w-full"
-                    onClick={() => {
-                      onGoToDashboard();
-                      closeMenu();
-                    }}
-                  >
-                    Dashboard
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="secondary-button w-full"
-                    onClick={() => {
-                      onSimulateLogin();
-                      closeMenu();
-                    }}
-                  >
-                    Simulate Login
-                  </button>
-                )}
                 <button
                   type="button"
                   className="primary-button w-full"

@@ -109,9 +109,13 @@ export default function NewProjectModal({ onClose, onCreate }) {
       const rows = parsedData.data;
       const headers = parsedData.meta.fields;
       
-      // Calculate basic schema summary
+      // Calculate enriched schema summary
+      const sampleRows = rows.slice(0, 10);
+      
       const schemaSummary = {
         rowCount: rows.length,
+        columnCount: headers.length,
+        sampleData: sampleRows,
         columns: headers.map(header => {
           // Detect type by checking first non-null value
           let type = 'string';
@@ -121,17 +125,49 @@ export default function NewProjectModal({ onClose, onCreate }) {
               break;
             }
           }
-          return { name: header, type };
+          
+          let stats = {};
+          if (type === 'number') {
+            let min = Infinity;
+            let max = -Infinity;
+            let sum = 0;
+            let count = 0;
+            for (const row of rows) {
+              const val = row[header];
+              if (typeof val === 'number') {
+                if (val < min) min = val;
+                if (val > max) max = val;
+                sum += val;
+                count++;
+              }
+            }
+            stats = {
+              min: count > 0 ? min : null,
+              max: count > 0 ? max : null,
+              mean: count > 0 ? Number((sum / count).toFixed(2)) : null
+            };
+          } else {
+            const uniqueValues = new Set();
+            for (const row of rows) {
+              if (row[header] !== null && row[header] !== undefined) {
+                uniqueValues.add(String(row[header]));
+              }
+              if (uniqueValues.size > 100) break; // limit tracking for high cardinality
+            }
+            stats = { uniqueCount: uniqueValues.size > 100 ? '100+' : uniqueValues.size };
+          }
+          
+          return { name: header, type, stats };
         })
       };
 
       // 2. Upload to Supabase Storage
-      const filePath = \`\${currentUser.id}/\${Date.now()}_\${selectedFile.name}\`;
+      const filePath = `${currentUser.id}/${Date.now()}_${selectedFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from('datasets')
         .upload(filePath, selectedFile);
         
-      if (uploadError) throw new Error(\`Storage error: \${uploadError.message}\`);
+      if (uploadError) throw new Error(`Storage error: ${uploadError.message}`);
 
       // 3. Create Project Record in Supabase
       const { data: projectData, error: dbError } = await supabase
@@ -147,7 +183,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
         .select()
         .single();
 
-      if (dbError) throw new Error(\`Database error: \${dbError.message}\`);
+      if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
       clearInterval(intervalId);
       setCreatedProject({ ...projectData, rawData: rows }); // Pass rawData for immediate UI rendering
@@ -198,9 +234,9 @@ export default function NewProjectModal({ onClose, onCreate }) {
             </div>
 
             <div
-              className={\`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors \${
+              className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
                 dragActive ? 'border-taupe bg-blush/20' : 'border-grey-light hover:border-taupe bg-grey-light'
-              }\`}
+              }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -255,7 +291,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
               <button
                 onClick={handleSubmit}
                 disabled={!selectedFile || !projectName.trim()}
-                className={\`w-full primary-button \${(!selectedFile || !projectName.trim()) ? 'opacity-50 cursor-not-allowed' : ''}\`}
+                className={`w-full primary-button ${(!selectedFile || !projectName.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Create Project
               </button>

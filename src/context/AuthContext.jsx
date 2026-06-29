@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
     });
 
     if (error) throw new Error(error.message);
-    return data.user;
+    return { user: data.user, session: data.session };
   };
 
   const logIn = async ({ email, password }) => {

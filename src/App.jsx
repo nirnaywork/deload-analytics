@@ -13,7 +13,6 @@ import ProjectWorkspace from './components/dashboard/ProjectWorkspace.jsx';
 
 function AppContent() {
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
-  const [demoDashboard, setDemoDashboard] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [showDashboard, setShowDashboard] = useState(true);
   const { isAuthenticated, logOut, currentUser } = useAuth();
@@ -32,17 +31,11 @@ function AppContent() {
     if (isAuthenticated) {
       await logOut();
     }
-    setDemoDashboard(false);
     setActiveProject(null);
     setShowDashboard(false);
   };
 
-  const handleSimulateLogin = () => {
-    setDemoDashboard(true);
-    setShowDashboard(true);
-  };
-
-  if ((isAuthenticated || demoDashboard) && showDashboard) {
+  if (isAuthenticated && showDashboard) {
     if (activeProject) {
       return (
         <ProjectWorkspace 
@@ -65,9 +58,7 @@ function AppContent() {
     <div className="min-h-screen bg-white font-sans text-black">
       <Navbar 
         onOpenAuth={openAuthModal} 
-        onSimulateLogin={handleSimulateLogin} 
         onGoToDashboard={() => setShowDashboard(true)}
-        isDemo={demoDashboard}
       />
       <main>
           <Hero onOpenAuth={openAuthModal} />
