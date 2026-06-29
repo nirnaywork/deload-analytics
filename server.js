@@ -23,23 +23,28 @@ app.post('/api/analyze', async (req, res) => {
   try {
     const { schemaSummary, config } = req.body;
     let attempts = 0;
+    let lastRawResult = null;
     let result = null;
 
     while (attempts < 2) {
       try {
-        result = await callLlama(JSON.stringify(schemaSummary), false, config);
-        if (validateAnalyzeResponse(result)) {
+        const rawResult = await callLlama(JSON.stringify(schemaSummary), false, config);
+        lastRawResult = rawResult;
+        if (validateAnalyzeResponse(rawResult)) {
+          result = rawResult;
           break; // Valid JSON
+        } else {
+          console.error('Validation failed for JSON:', JSON.stringify(rawResult, null, 2));
         }
       } catch (e) {
         console.error('Llama parsing error attempt', attempts, e.message);
+        lastRawResult = e.message;
       }
       attempts++;
-      result = null; // Reset if invalid
     }
 
     if (!result) {
-      return res.status(422).json({ error: 'Failed to generate valid analysis format after retries' });
+      return res.status(422).json({ error: `Failed to generate valid analysis format after retries. Last output from AI: ${JSON.stringify(lastRawResult).substring(0, 300)}...` });
     }
 
     res.json(result);

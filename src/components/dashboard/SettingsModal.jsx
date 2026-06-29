@@ -34,7 +34,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
     const saved = localStorage.getItem('deload_ai_config');
     return saved ? JSON.parse(saved) : {
       provider: 'local',
-      endpoint: 'http://localhost:11434/api/generate',
+      endpoint: 'http://127.0.0.1:11434/api/generate',
       model: 'qwen3:14b',
       apiKey: ''
     };

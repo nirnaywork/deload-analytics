@@ -19,7 +19,7 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
     const saved = localStorage.getItem('deload_ai_config');
     return saved ? JSON.parse(saved) : {
       provider: 'local',
-      endpoint: 'http://localhost:11434/api/generate',
+      endpoint: 'http://127.0.0.1:11434/api/generate',
       model: 'qwen3:14b',
       apiKey: ''
     };
@@ -38,7 +38,7 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         .single();
 
       if (!thread) {
-        const { data: newThread } = await supabase
+        const { data: newThread, error: threadError } = await supabase
           .from('chat_threads')
           .insert({
             project_id: project.id,
@@ -47,6 +47,12 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
           })
           .select()
           .single();
+          
+        if (threadError) {
+          console.error('Failed to create thread:', threadError);
+          setMessages([{ id: 'error', sender: 'ai', message_text: `Database Error: Ensure RLS policies are added for chat_threads, chat_messages, and generated_outputs. (${threadError.message})` }]);
+          return;
+        }
         thread = newThread;
       }
       
@@ -90,11 +96,18 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         })
       });
 
-      if (!response.ok) throw new Error('Failed to generate initial insights');
+      if (!response.ok) {
+        let errMsg = 'Failed to generate initial insights';
+        try {
+          const errData = await response.json();
+          errMsg = errData.error || errMsg;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
       const aiData = await response.json();
 
       // Save initial system message and output
-      const { data: sysMessage } = await supabase
+      const { data: sysMessage, error: sysMsgError } = await supabase
         .from('chat_messages')
         .insert({
           thread_id: threadId,
@@ -104,24 +117,30 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         })
         .select()
         .single();
+        
+      if (sysMsgError) throw new Error(`Database error saving message: ${sysMsgError.message}`);
 
-      const { data: sysOutput } = await supabase
+      const { data: sysOutput, error: sysOutError } = await supabase
         .from('generated_outputs')
         .insert({
           message_id: sysMessage.id,
           user_id: currentUser.id,
-          type: 'initial-overview',
+          type: 'text',
           insight: JSON.stringify(aiData), // Store the structured AI JSON here
           chart_data: project.schema_summary // pass schema for Recharts
         })
         .select()
         .single();
 
+      if (sysOutError) throw new Error(`Database error saving output: ${sysOutError.message}. Did you add RLS to generated_outputs?`);
+
       setMessages(prev => [...prev, sysMessage]);
       setOutputs(prev => [...prev, sysOutput]);
 
     } catch (error) {
-      console.error(error);
+      console.error('Insight generation error:', error);
+      const errMsg = { id: Date.now().toString(), sender: 'ai', message_text: `System Error: ${error.message}. Is Ollama running and the qwen3:14b model installed?` };
+      setMessages(prev => [...prev, errMsg]);
     } finally {
       setIsThinking(false);
     }
@@ -131,7 +150,7 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
     if (!text.trim() || !activeThreadId) return;
 
     // 1. Save user message
-    const { data: userMsg } = await supabase
+    const { data: userMsg, error: userMsgError } = await supabase
       .from('chat_messages')
       .insert({
         thread_id: activeThreadId,
@@ -141,6 +160,11 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
       })
       .select()
       .single();
+      
+    if (userMsgError) {
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', message_text: `Failed to save message: ${userMsgError.message}` }]);
+      return;
+    }
 
     setMessages(prev => [...prev, userMsg]);
     setIsThinking(true);
@@ -157,11 +181,18 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         })
       });
 
-      if (!response.ok) throw new Error('Failed to get AI response');
+      if (!response.ok) {
+        let errMsg = 'Failed to get AI response';
+        try {
+          const errData = await response.json();
+          errMsg = errData.error || errMsg;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
       const aiData = await response.json();
 
       // 3. Save AI message and output
-      const { data: aiMsg } = await supabase
+      const { data: aiMsg, error: aiMsgError } = await supabase
         .from('chat_messages')
         .insert({
           thread_id: activeThreadId,
@@ -171,8 +202,10 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         })
         .select()
         .single();
+        
+      if (aiMsgError) throw new Error(`Failed to save AI message: ${aiMsgError.message}`);
 
-      const { data: aiOutput } = await supabase
+      const { data: aiOutput, error: aiOutError } = await supabase
         .from('generated_outputs')
         .insert({
           message_id: aiMsg.id,
@@ -183,6 +216,8 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
         })
         .select()
         .single();
+        
+      if (aiOutError) throw new Error(`Database error saving AI output: ${aiOutError.message}`);
 
       setMessages(prev => [...prev, aiMsg]);
       setOutputs(prev => [...prev, aiOutput]);

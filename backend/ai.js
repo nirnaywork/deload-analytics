@@ -48,7 +48,7 @@ If the question is a general question or you cannot build a chart, use type "tex
 export async function callLlama(promptText, isChat = false, config = {}) {
   const {
     provider = 'local', // 'local' or 'cloud'
-    endpoint = 'http://localhost:11434/api/generate',
+    endpoint = 'http://127.0.0.1:11434/api/generate',
     model = 'qwen3:14b',
     apiKey = ''
   } = config;

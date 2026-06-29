@@ -187,7 +187,7 @@ export default function OutputPanel({ outputs, isThinking, onSuggestionClick, pr
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-20">
             {outputs.map((output, idx) => {
-              const isInitial = output.type === 'initial-overview';
+              const isInitial = idx === 0;
               
               return (
                 <div key={output.id || idx} className="animate-in slide-in-from-bottom-4 fade-in duration-500">
