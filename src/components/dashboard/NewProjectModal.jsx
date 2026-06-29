@@ -1,19 +1,24 @@
 import { useState, useRef } from 'react';
 import { UploadCloud, FileSpreadsheet, X, CheckCircle, Loader2 } from 'lucide-react';
+import Papa from 'papaparse';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NewProjectModal({ onClose, onCreate }) {
+  const { currentUser } = useAuth();
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [projectName, setProjectName] = useState('');
   const [error, setError] = useState('');
   const [uploadState, setUploadState] = useState('idle'); // 'idle' | 'processing' | 'success'
-  const [statusText, setStatusText] = useState('Checking for missing values...');
+  const [statusText, setStatusText] = useState('Parsing dataset...');
+  const [createdProject, setCreatedProject] = useState(null);
   const inputRef = useRef(null);
 
   const statuses = [
-    'Checking for missing values...',
-    'Correcting formatting...',
-    'Detecting column types...',
+    'Parsing dataset...',
+    'Uploading to secure storage...',
+    'Analyzing data schema...',
     'Generating data summary...',
   ];
 
@@ -29,15 +34,14 @@ export default function NewProjectModal({ onClose, onCreate }) {
 
   const validateFile = (file) => {
     if (!file) return false;
-    const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    const validExtensions = ['.csv', '.xlsx', '.xls'];
-    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    const validTypes = ['text/csv', 'application/vnd.ms-excel'];
+    const hasValidExtension = file.name.toLowerCase().endsWith('.csv');
     
     if (validTypes.includes(file.type) || hasValidExtension) {
       setError('');
       return true;
     } else {
-      setError('Invalid file type. Please upload a CSV or XLSX file.');
+      setError('Invalid file type. Please upload a CSV file.');
       return false;
     }
   };
@@ -50,7 +54,6 @@ export default function NewProjectModal({ onClose, onCreate }) {
       const file = e.dataTransfer.files[0];
       if (validateFile(file)) {
         setSelectedFile(file);
-        // Auto-fill project name from filename if empty
         if (!projectName.trim()) {
           setProjectName(file.name.replace(/\.[^/.]+$/, ""));
         }
@@ -79,32 +82,86 @@ export default function NewProjectModal({ onClose, onCreate }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedFile || !projectName.trim()) return;
     
     setUploadState('processing');
     
-    // Simulate rotating status text
+    // Simulate rotating status text for UX
     let statusIndex = 0;
     const intervalId = setInterval(() => {
       statusIndex = (statusIndex + 1) % statuses.length;
       setStatusText(statuses[statusIndex]);
-    }, 800);
+    }, 1500);
 
-    // Simulate processing delay
-    setTimeout(() => {
+    try {
+      // 1. Parse CSV Client Side
+      const parsedData = await new Promise((resolve, reject) => {
+        Papa.parse(selectedFile, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: resolve,
+          error: reject
+        });
+      });
+
+      const rows = parsedData.data;
+      const headers = parsedData.meta.fields;
+      
+      // Calculate basic schema summary
+      const schemaSummary = {
+        rowCount: rows.length,
+        columns: headers.map(header => {
+          // Detect type by checking first non-null value
+          let type = 'string';
+          for(let i=0; i<Math.min(rows.length, 50); i++) {
+            if (rows[i][header] !== null && rows[i][header] !== undefined) {
+              type = typeof rows[i][header];
+              break;
+            }
+          }
+          return { name: header, type };
+        })
+      };
+
+      // 2. Upload to Supabase Storage
+      const filePath = \`\${currentUser.id}/\${Date.now()}_\${selectedFile.name}\`;
+      const { error: uploadError } = await supabase.storage
+        .from('datasets')
+        .upload(filePath, selectedFile);
+        
+      if (uploadError) throw new Error(\`Storage error: \${uploadError.message}\`);
+
+      // 3. Create Project Record in Supabase
+      const { data: projectData, error: dbError } = await supabase
+        .from('projects')
+        .insert({
+          user_id: currentUser.id,
+          name: projectName.trim(),
+          file_name: selectedFile.name,
+          file_path: filePath,
+          file_size: selectedFile.size,
+          schema_summary: schemaSummary
+        })
+        .select()
+        .single();
+
+      if (dbError) throw new Error(\`Database error: \${dbError.message}\`);
+
       clearInterval(intervalId);
+      setCreatedProject({ ...projectData, rawData: rows }); // Pass rawData for immediate UI rendering
       setUploadState('success');
-    }, 3500);
+      
+    } catch (err) {
+      clearInterval(intervalId);
+      setError(err.message);
+      setUploadState('idle');
+    }
   };
 
   const handleFinish = () => {
-    onCreate({
-      id: Math.random().toString(36).substr(2, 9),
-      name: projectName.trim(),
-      timestamp: 'Just now',
-      file: selectedFile
-    });
+    onCreate(createdProject);
   };
 
   return (
@@ -124,7 +181,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
         {uploadState === 'idle' && (
           <div className="flex flex-col">
             <h2 className="font-serif text-3xl font-semibold mb-2 text-black">New Project</h2>
-            <p className="text-taupe mb-8">Upload a dataset to start analyzing.</p>
+            <p className="text-taupe mb-8">Upload a CSV dataset to start analyzing.</p>
 
             <div className="mb-6">
               <label htmlFor="projectName" className="block text-sm font-medium text-black mb-2">
@@ -141,9 +198,9 @@ export default function NewProjectModal({ onClose, onCreate }) {
             </div>
 
             <div
-              className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
+              className={\`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors \${
                 dragActive ? 'border-taupe bg-blush/20' : 'border-grey-light hover:border-taupe bg-grey-light'
-              }`}
+              }\`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -153,7 +210,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
                 ref={inputRef}
                 type="file"
                 className="hidden"
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                accept=".csv"
                 onChange={handleChange}
               />
               
@@ -161,7 +218,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
                 <>
                   <UploadCloud className="w-10 h-10 text-taupe mb-3" />
                   <p className="text-black text-sm font-medium mb-1">Drag and drop your file here</p>
-                  <p className="text-xs text-taupe mb-4">Supported formats: CSV, XLSX</p>
+                  <p className="text-xs text-taupe mb-4">Supported formats: CSV</p>
                   <button 
                     onClick={() => inputRef.current.click()}
                     className="secondary-button !min-h-10 !py-2 !px-4 text-xs"
@@ -198,7 +255,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
               <button
                 onClick={handleSubmit}
                 disabled={!selectedFile || !projectName.trim()}
-                className={`w-full primary-button ${(!selectedFile || !projectName.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={\`w-full primary-button \${(!selectedFile || !projectName.trim()) ? 'opacity-50 cursor-not-allowed' : ''}\`}
               >
                 Create Project
               </button>
@@ -209,7 +266,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
         {uploadState === 'processing' && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 text-black animate-spin mb-6" />
-            <h3 className="font-serif text-2xl font-semibold mb-2">Cleaning your data...</h3>
+            <h3 className="font-serif text-2xl font-semibold mb-2">Analyzing your data...</h3>
             <p className="text-taupe transition-all duration-300">{statusText}</p>
             <div className="w-full bg-grey-light rounded-full h-1.5 mt-8 overflow-hidden">
               <div className="bg-black h-1.5 rounded-full animate-pulse w-full"></div>

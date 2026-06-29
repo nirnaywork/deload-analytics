@@ -1,100 +1,62 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
-import { auth } from '../lib/firebase.js';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
-const googleProvider = new GoogleAuthProvider();
-
-googleProvider.setCustomParameters({
-  prompt: 'select_account',
-});
-
-const authErrorMessages = {
-  'auth/account-exists-with-different-credential':
-    'An account already exists for this email using another sign-in method.',
-  'auth/cancelled-popup-request': 'Another Google sign-in attempt is already in progress.',
-  'auth/email-already-in-use': 'An account already exists for this email.',
-  'auth/invalid-credential': 'The email or password is incorrect.',
-  'auth/invalid-email': 'Enter a valid email address.',
-  'auth/network-request-failed': 'Network request failed. Check your connection and try again.',
-  'auth/operation-not-allowed': 'This sign-in method is not enabled in Firebase Authentication.',
-  'auth/popup-blocked': 'The Google sign-in popup was blocked by the browser.',
-  'auth/popup-closed-by-user': 'Google sign-in was closed before completion.',
-  'auth/too-many-requests': 'Too many attempts. Try again in a few minutes.',
-  'auth/unauthorized-domain': 'This domain is not authorized in your Firebase Authentication settings.',
-  'auth/user-not-found': 'No account exists for this email.',
-  'auth/weak-password': 'Use a password with at least 6 characters.',
-  'auth/wrong-password': 'The email or password is incorrect.',
-};
-
-function getAuthErrorMessage(error) {
-  return authErrorMessages[error?.code] || 'Authentication failed. Please try again.';
-}
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
       setIsAuthReady(true);
     });
 
-    return unsubscribe;
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async ({ name, email, password }) => {
-    try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name.trim(),
+        },
+      },
+    });
 
-      if (name.trim()) {
-        await updateProfile(credential.user, { displayName: name.trim() });
-      }
-
-      return credential.user;
-    } catch (error) {
-      throw new Error(getAuthErrorMessage(error));
-    }
+    if (error) throw new Error(error.message);
+    return data.user;
   };
 
   const logIn = async ({ email, password }) => {
-    try {
-      const credential = await signInWithEmailAndPassword(auth, email, password);
-      return credential.user;
-    } catch (error) {
-      throw new Error(getAuthErrorMessage(error));
-    }
-  };
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const signInWithGoogle = async () => {
-    try {
-      const credential = await signInWithPopup(auth, googleProvider);
-      return credential.user;
-    } catch (error) {
-      throw new Error(getAuthErrorMessage(error));
-    }
+    if (error) throw new Error(error.message);
+    return data.user;
   };
 
   const logOut = async () => {
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error(error.message);
   };
 
   const resetPassword = async (email) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      throw new Error(getAuthErrorMessage(error));
-    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw new Error(error.message);
   };
 
   const value = useMemo(
@@ -105,7 +67,6 @@ export function AuthProvider({ children }) {
       logIn,
       logOut,
       resetPassword,
-      signInWithGoogle,
       signUp,
     }),
     [currentUser, isAuthReady],

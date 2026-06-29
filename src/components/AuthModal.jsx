@@ -14,7 +14,7 @@ function AuthModal({ initialMode = 'login', isOpen, onClose }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { logIn, resetPassword, signInWithGoogle, signUp } = useAuth();
+  const { logIn, resetPassword, signUp } = useAuth();
 
   const isSignup = mode === 'signup';
 
@@ -84,20 +84,7 @@ function AuthModal({ initialMode = 'login', isOpen, onClose }) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsSubmitting(true);
-    setStatusMessage('');
-    setErrorMessage('');
 
-    try {
-      await signInWithGoogle();
-      onClose();
-    } catch (error) {
-      setErrorMessage(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handlePasswordReset = async () => {
     if (!form.email) {
@@ -146,31 +133,11 @@ function AuthModal({ initialMode = 'login', isOpen, onClose }) {
         </h2>
         <p className="mt-4 leading-7 text-taupe">
           {isSignup
-            ? 'Start with Google or create an email and password account directly in Firebase Authentication.'
-            : 'Use Google or the email and password connected to your Deload Analytics account.'}
+            ? 'Create an email and password account.'
+            : 'Use the email and password connected to your Deload Analytics account.'}
         </p>
 
-        <button
-          type="button"
-          className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-[4px] border border-black px-5 py-3 text-sm font-semibold text-black transition hover:border-taupe hover:bg-grey-light"
-          onClick={handleGoogleSignIn}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <Loader2 className="animate-spin" size={18} aria-hidden="true" />
-          ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-grey-light font-serif text-base font-semibold">
-              G
-            </span>
-          )}
-          Continue with Google
-        </button>
 
-        <div className="my-7 flex items-center gap-4">
-          <span className="h-px flex-1 bg-grey-light" />
-          <span className="text-xs font-semibold uppercase text-taupe">or</span>
-          <span className="h-px flex-1 bg-grey-light" />
-        </div>
 
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {isSignup && (

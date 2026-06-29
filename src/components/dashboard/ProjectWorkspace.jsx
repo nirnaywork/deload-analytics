@@ -3,85 +3,203 @@ import OutputPanel from './OutputPanel';
 import ChatPanel from './ChatPanel';
 import NavigationRail from './NavigationRail';
 import SettingsModal from './SettingsModal';
-
-// Utility to generate a random ID
-const generateId = () => Math.random().toString(36).substr(2, 9);
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProjectWorkspace({ project, onNavigateHome, onLogout, onOpenProject }) {
+  const { currentUser } = useAuth();
   const [isThinking, setIsThinking] = useState(false);
   const [messages, setMessages] = useState([]);
   const [outputs, setOutputs] = useState([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
-  // To cycle through different mock output types
-  const [mockIndex, setMockIndex] = useState(0);
+  const [activeThreadId, setActiveThreadId] = useState(null);
 
-  // Reset workspace when project changes
+  // Configuration for AI from LocalStorage
+  const getAiConfig = () => {
+    const saved = localStorage.getItem('deload_ai_config');
+    return saved ? JSON.parse(saved) : {
+      provider: 'local',
+      endpoint: 'http://localhost:11434/api/generate',
+      model: 'qwen3:14b',
+      apiKey: ''
+    };
+  };
+
   useEffect(() => {
-    setMessages([]);
-    setOutputs([]);
-    setIsThinking(false);
-    setMockIndex(0);
-  }, [project?.id]);
+    if (!project?.id || !currentUser) return;
 
-  const generateMockResponse = useCallback((question) => {
-    // Cycle through: line chart -> table -> text -> bar chart
-    const types = ['chart-line', 'table', 'text', 'chart-bar'];
-    const currentType = types[mockIndex % types.length];
-    setMockIndex(prev => prev + 1);
+    async function loadWorkspace() {
+      // 1. Get or create a chat thread for this project
+      let { data: thread } = await supabase
+        .from('chat_threads')
+        .select('*')
+        .eq('project_id', project.id)
+        .limit(1)
+        .single();
 
-    const mockResponses = {
-      'chart-line': {
-        type: 'chart-line',
-        insight: 'Revenue has seen a steady increase since April, with profit margins improving alongside.',
-        data: null
-      },
-      'chart-bar': {
-        type: 'chart-bar',
-        insight: 'Product A continues to lead in sales volume, outperforming Product B by 33%.',
-        data: null
-      },
-      'table': {
-        type: 'table',
-        insight: 'Here is the breakdown of active users and conversion rates by region. North America maintains the highest volume.',
-        data: null
-      },
-      'text': {
-        type: 'text',
-        insight: null,
-        data: 'Based on the uploaded dataset, there are no unusual spikes this quarter. The data follows the expected seasonal trend with a 5% variance, which is within normal operating limits.'
+      if (!thread) {
+        const { data: newThread } = await supabase
+          .from('chat_threads')
+          .insert({
+            project_id: project.id,
+            user_id: currentUser.id,
+            title: 'General Analysis'
+          })
+          .select()
+          .single();
+        thread = newThread;
       }
-    };
+      
+      setActiveThreadId(thread.id);
 
-    const response = mockResponses[currentType];
+      // 2. Load existing messages and outputs
+      const { data: existingMessages } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('thread_id', thread.id)
+        .order('created_at', { ascending: true });
 
-    return {
-      id: generateId(),
-      question,
-      ...response
-    };
-  }, [mockIndex]);
+      const { data: existingOutputs } = await supabase
+        .from('generated_outputs')
+        .select('*')
+        .in('message_id', existingMessages?.map(m => m.id) || [])
+        .order('created_at', { ascending: true });
 
-  const handleSendMessage = useCallback((text) => {
-    const userMsg = { id: generateId(), sender: 'user', text };
+      setMessages(existingMessages || []);
+      setOutputs(existingOutputs || []);
+
+      // 3. If no outputs exist yet, automatically generate the initial insights
+      if (!existingOutputs || existingOutputs.length === 0) {
+        generateInitialInsights(thread.id);
+      }
+    }
+
+    loadWorkspace();
+  }, [project?.id, currentUser]);
+
+  const generateInitialInsights = async (threadId) => {
+    setIsThinking(true);
+    try {
+      // Call Express backend to analyze
+      const response = await fetch('http://localhost:3001/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schemaSummary: project.schema_summary,
+          config: getAiConfig()
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate initial insights');
+      const aiData = await response.json();
+
+      // Save initial system message and output
+      const { data: sysMessage } = await supabase
+        .from('chat_messages')
+        .insert({
+          thread_id: threadId,
+          user_id: currentUser.id,
+          sender: 'ai',
+          message_text: "I've analyzed your dataset and generated an initial overview."
+        })
+        .select()
+        .single();
+
+      const { data: sysOutput } = await supabase
+        .from('generated_outputs')
+        .insert({
+          message_id: sysMessage.id,
+          user_id: currentUser.id,
+          type: 'initial-overview',
+          insight: JSON.stringify(aiData), // Store the structured AI JSON here
+          chart_data: project.schema_summary // pass schema for Recharts
+        })
+        .select()
+        .single();
+
+      setMessages(prev => [...prev, sysMessage]);
+      setOutputs(prev => [...prev, sysOutput]);
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  const handleSendMessage = useCallback(async (text) => {
+    if (!text.trim() || !activeThreadId) return;
+
+    // 1. Save user message
+    const { data: userMsg } = await supabase
+      .from('chat_messages')
+      .insert({
+        thread_id: activeThreadId,
+        user_id: currentUser.id,
+        sender: 'user',
+        message_text: text
+      })
+      .select()
+      .single();
+
     setMessages(prev => [...prev, userMsg]);
     setIsThinking(true);
 
-    // Simulate network/AI delay
-    setTimeout(() => {
-      const result = generateMockResponse(text);
-      
-      const aiMsg = { 
-        id: generateId(), 
-        sender: 'ai', 
-        text: `Here's what I found regarding "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}" →` 
-      };
-      
+    try {
+      // 2. Call AI chat backend
+      const response = await fetch('http://localhost:3001/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schemaSummary: project.schema_summary,
+          question: text,
+          config: getAiConfig()
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to get AI response');
+      const aiData = await response.json();
+
+      // 3. Save AI message and output
+      const { data: aiMsg } = await supabase
+        .from('chat_messages')
+        .insert({
+          thread_id: activeThreadId,
+          user_id: currentUser.id,
+          sender: 'ai',
+          message_text: `Here is the analysis for: "${text}"`
+        })
+        .select()
+        .single();
+
+      const { data: aiOutput } = await supabase
+        .from('generated_outputs')
+        .insert({
+          message_id: aiMsg.id,
+          user_id: currentUser.id,
+          type: aiData.type || 'text',
+          insight: aiData.insight,
+          chart_data: aiData.dataPoints || null
+        })
+        .select()
+        .single();
+
       setMessages(prev => [...prev, aiMsg]);
-      setOutputs(prev => [...prev, result]);
+      setOutputs(prev => [...prev, aiOutput]);
+
+    } catch (error) {
+      console.error(error);
+      // fallback error message
+      const errMessage = { id: Date.now().toString(), sender: 'ai', message_text: 'Sorry, I encountered an error while processing that request.' };
+      setMessages(prev => [...prev, errMessage]);
+    } finally {
       setIsThinking(false);
-    }, 2000);
-  }, [generateMockResponse]);
+    }
+  }, [activeThreadId, project, currentUser]);
+
+  const dashboardTitle = project?.companyName 
+    ? `${project.companyName} — Analytics Dashboard` 
+    : (project?.name || 'Untitled Project');
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-white font-sans text-black">
@@ -93,10 +211,9 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
       />
 
       <div className="flex-1 flex w-full h-full relative">
-        {/* Top-left project name overlay */}
         <div className="absolute top-6 left-8 z-10 pointer-events-none">
           <h2 className="font-serif text-xl font-semibold text-black bg-white/80 backdrop-blur-sm px-2 py-1 rounded">
-            {project?.name || 'Untitled Project'}
+            {dashboardTitle}
           </h2>
         </div>
 
@@ -104,6 +221,7 @@ export default function ProjectWorkspace({ project, onNavigateHome, onLogout, on
           outputs={outputs} 
           isThinking={isThinking} 
           onSuggestionClick={handleSendMessage} 
+          project={project}
         />
         <ChatPanel 
           messages={messages} 

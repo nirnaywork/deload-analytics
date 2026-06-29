@@ -24,7 +24,7 @@ export default function ChatThread({ messages, isThinking }) {
                   : 'bg-white text-black border border-taupe/30 rounded-tl-sm shadow-sm'
               }`}
             >
-              {msg.text}
+              {msg.message_text}
             </div>
           </div>
         ))

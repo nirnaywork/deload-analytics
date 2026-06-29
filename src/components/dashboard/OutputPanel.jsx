@@ -1,98 +1,155 @@
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, AlertTriangle, Lightbulb, TrendingUp, Info } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 const SUGGESTIONS = [
-  "Show me revenue trends by month",
-  "What are my top 5 products?",
-  "Any unusual spikes this quarter?",
+  "What is the overall trend?",
+  "Are there any anomalies?",
+  "Can you summarize the top categories?",
 ];
 
-const MOCK_LINE_DATA = [
-  { name: 'Jan', revenue: 4000, profit: 2400 },
-  { name: 'Feb', revenue: 3000, profit: 1398 },
-  { name: 'Mar', revenue: 2000, profit: 9800 },
-  { name: 'Apr', revenue: 2780, profit: 3908 },
-  { name: 'May', revenue: 1890, profit: 4800 },
-  { name: 'Jun', revenue: 2390, profit: 3800 },
-  { name: 'Jul', revenue: 3490, profit: 4300 },
-];
+function InitialOverview({ aiData }) {
+  if (!aiData) return null;
+  const data = typeof aiData === 'string' ? JSON.parse(aiData) : aiData;
 
-const MOCK_BAR_DATA = [
-  { name: 'Product A', sales: 400 },
-  { name: 'Product B', sales: 300 },
-  { name: 'Product C', sales: 300 },
-  { name: 'Product D', sales: 200 },
-  { name: 'Product E', sales: 100 },
-];
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-green-100 text-green-800';
+    }
+  };
 
-const MOCK_TABLE_DATA = [
-  { id: 1, region: 'North America', users: '12,450', conversion: '4.2%' },
-  { id: 2, region: 'Europe', users: '8,230', conversion: '3.8%' },
-  { id: 3, region: 'Asia Pacific', users: '5,100', conversion: '5.1%' },
-  { id: 4, region: 'Latin America', users: '2,800', conversion: '2.9%' },
-];
+  const getSeverityColor = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'high': return 'bg-red-500';
+      case 'medium': return 'bg-yellow-500';
+      default: return 'bg-green-500';
+    }
+  };
 
-function ChartResult({ type }) {
-  if (type === 'line') {
+  return (
+    <div className="space-y-6">
+      <div className="bg-blush/20 p-6 rounded-xl border border-taupe/20">
+        <div className="flex justify-between items-start mb-4">
+          <h4 className="font-serif text-2xl font-semibold">AI Summary</h4>
+          <div className="flex space-x-2 text-sm font-medium">
+            <span className="px-3 py-1 bg-white border border-grey-light rounded-full">
+              Health: {data?.metrics?.overallHealthScore ?? 0}/100
+            </span>
+            <span className={\`px-3 py-1 rounded-full \${getPriorityColor(data?.metrics?.priority)}\`}>
+              {data?.metrics?.priority} Priority
+            </span>
+          </div>
+        </div>
+        <p className="text-black leading-relaxed">{data.summary}</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white border border-grey-light p-5 rounded-xl shadow-sm">
+          <div className="flex items-center space-x-2 mb-3">
+            <Info className="w-5 h-5 text-taupe" />
+            <h5 className="font-semibold text-lg">Key Insights</h5>
+          </div>
+          <div className="space-y-3">
+            {data.insights?.map((insight, idx) => (
+              <div key={idx} className="flex items-start space-x-3 p-3 bg-grey-light/50 rounded-lg">
+                <div className={\`w-2 h-2 mt-2 rounded-full \${getSeverityColor(insight.severity)}\`} />
+                <div>
+                  <h6 className="font-medium text-sm">{insight.title}</h6>
+                  <p className="text-xs text-taupe mt-1">{insight.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white border border-grey-light p-5 rounded-xl shadow-sm">
+          <div className="flex items-center space-x-2 mb-3">
+            <Lightbulb className="w-5 h-5 text-taupe" />
+            <h5 className="font-semibold text-lg">Recommendations</h5>
+          </div>
+          <div className="space-y-3">
+            {data.recommendations?.map((rec, idx) => (
+              <div key={idx} className="p-3 bg-grey-light/50 rounded-lg">
+                <h6 className="font-medium text-sm">{rec.title}</h6>
+                <p className="text-xs text-taupe mt-1">{rec.description}</p>
+                <div className="mt-2 text-xs font-medium text-black bg-white px-2 py-1 rounded inline-block">
+                  Impact: {rec.expectedImpact}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DynamicChart({ type, data }) {
+  if (!data || !Array.isArray(data) || data.length === 0) return null;
+
+  if (type === 'chart-line') {
     return (
       <div className="h-64 w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={MOCK_LINE_DATA} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ECECEC" />
             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dy={10} />
             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dx={-10} />
-            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }} />
+            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-            <Line type="monotone" dataKey="revenue" stroke="#000000" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-            <Line type="monotone" dataKey="profit" stroke="#DDC9BD" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="value" stroke="#000000" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
     );
   }
 
-  return (
-    <div className="h-64 w-full mt-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={MOCK_BAR_DATA} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ECECEC" />
-          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dy={10} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dx={-10} />
-          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }} cursor={{ fill: '#f9fafb' }} />
-          <Bar dataKey="sales" fill="#000000" radius={[4, 4, 0, 0]} barSize={40} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
+  if (type === 'chart-bar') {
+    return (
+      <div className="h-64 w-full mt-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ECECEC" />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dy={10} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#73705F', fontSize: 12 }} dx={-10} />
+            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} cursor={{ fill: '#f9fafb' }} />
+            <Bar dataKey="value" fill="#000000" radius={[4, 4, 0, 0]} barSize={40} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
-function TableResult() {
-  return (
-    <div className="mt-4 overflow-x-auto border border-grey-light rounded-lg">
-      <table className="w-full text-sm text-left text-black">
-        <thead className="text-xs uppercase bg-grey-light border-b border-grey-light text-taupe font-semibold">
-          <tr>
-            <th className="px-6 py-3">Region</th>
-            <th className="px-6 py-3">Active Users</th>
-            <th className="px-6 py-3">Conversion Rate</th>
-          </tr>
-        </thead>
-        <tbody>
-          {MOCK_TABLE_DATA.map((row, i) => (
-            <tr key={row.id} className={i !== MOCK_TABLE_DATA.length - 1 ? 'border-b border-grey-light' : ''}>
-              <td className="px-6 py-4 font-medium">{row.region}</td>
-              <td className="px-6 py-4">{row.users}</td>
-              <td className="px-6 py-4">{row.conversion}</td>
+  if (type === 'table') {
+    return (
+      <div className="mt-4 overflow-x-auto border border-grey-light rounded-lg">
+        <table className="w-full text-sm text-left text-black">
+          <thead className="text-xs uppercase bg-grey-light border-b border-grey-light text-taupe font-semibold">
+            <tr>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Value</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </thead>
+          <tbody>
+            {data.map((row, i) => (
+              <tr key={i} className={i !== data.length - 1 ? 'border-b border-grey-light' : ''}>
+                <td className="px-6 py-4 font-medium">{row.name}</td>
+                <td className="px-6 py-4">{row.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return null;
 }
 
-export default function OutputPanel({ outputs, isThinking, onSuggestionClick }) {
+export default function OutputPanel({ outputs, isThinking, onSuggestionClick, project }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -129,39 +186,30 @@ export default function OutputPanel({ outputs, isThinking, onSuggestionClick }) 
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-20">
-            {outputs.map((output) => (
-              <div key={output.id} className="animate-in slide-in-from-bottom-4 fade-in duration-500">
-                <div className="mb-4">
-                  <h3 className="font-serif text-2xl font-semibold text-black">{output.question}</h3>
-                </div>
-                
-                <div className="bg-white border border-grey-light rounded-xl p-6 shadow-sm">
-                  {output.type === 'text' && (
-                    <div className="prose prose-sm max-w-none text-black leading-relaxed">
-                      <p>{output.data}</p>
+            {outputs.map((output, idx) => {
+              const isInitial = output.type === 'initial-overview';
+              
+              return (
+                <div key={output.id || idx} className="animate-in slide-in-from-bottom-4 fade-in duration-500">
+                  {!isInitial && (
+                    <div className="mb-4">
+                      <h3 className="font-serif text-2xl font-semibold text-black">Analysis</h3>
                     </div>
                   )}
-                  {output.type === 'chart-line' && (
-                    <div>
-                      <p className="text-sm text-black mb-2">{output.insight}</p>
-                      <ChartResult type="line" />
-                    </div>
-                  )}
-                  {output.type === 'chart-bar' && (
-                    <div>
-                      <p className="text-sm text-black mb-2">{output.insight}</p>
-                      <ChartResult type="bar" />
-                    </div>
-                  )}
-                  {output.type === 'table' && (
-                    <div>
-                      <p className="text-sm text-black mb-2">{output.insight}</p>
-                      <TableResult />
+                  
+                  {isInitial ? (
+                    <InitialOverview aiData={output.insight} />
+                  ) : (
+                    <div className="bg-white border border-grey-light rounded-xl p-6 shadow-sm">
+                      <div className="prose prose-sm max-w-none text-black leading-relaxed mb-4">
+                        <p>{output.insight}</p>
+                      </div>
+                      <DynamicChart type={output.type} data={output.chart_data} />
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
             
             {isThinking && (
               <div className="flex items-center space-x-3 text-taupe py-4 animate-pulse">

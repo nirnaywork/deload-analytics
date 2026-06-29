@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { X, Moon, Sun, User, Clock, FileSpreadsheet } from 'lucide-react';
-
-const MOCK_PROJECTS = [
-  { id: '1', name: 'Q3 Revenue Analysis', timestamp: 'Edited 2 hours ago' },
-  { id: '2', name: 'Customer Churn Review', timestamp: 'Edited 1 day ago' },
-  { id: '3', name: 'Marketing ROI 2026', timestamp: 'Edited 3 days ago' },
-];
+import { useState, useEffect } from 'react';
+import { X, Moon, Sun, User, Clock, FileSpreadsheet, Settings } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SettingsModal({ onClose, onOpenProject }) {
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('appearance');
+  
+  // Theme state
   const [theme, setTheme] = useState(() => {
     return typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   });
@@ -22,18 +21,71 @@ export default function SettingsModal({ onClose, onOpenProject }) {
     }
   };
   
-  // Mock User State
+  // Profile state
   const [profile, setProfile] = useState({
-    name: 'Jane Doe',
-    company: 'Acme Corp',
-    email: 'jane@acmecorp.com'
+    name: '',
+    company: '',
+    email: currentUser?.email || ''
   });
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSaveProfile = (e) => {
+  // AI Config state
+  const [aiConfig, setAiConfig] = useState(() => {
+    const saved = localStorage.getItem('deload_ai_config');
+    return saved ? JSON.parse(saved) : {
+      provider: 'local',
+      endpoint: 'http://localhost:11434/api/generate',
+      model: 'qwen3:14b',
+      apiKey: ''
+    };
+  });
+  const [isAiConfigSaved, setIsAiConfigSaved] = useState(false);
+
+  // Projects state
+  const [projects, setProjects] = useState([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    async function loadProfile() {
+      const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (data) {
+        setProfile({
+          name: data.full_name || '',
+          company: data.company || '',
+          email: currentUser.email
+        });
+      }
+    }
+    
+    async function loadProjects() {
+      setIsLoadingProjects(true);
+      const { data } = await supabase.from('projects').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+      if (data) setProjects(data);
+      setIsLoadingProjects(false);
+    }
+
+    loadProfile();
+    loadProjects();
+  }, [currentUser]);
+
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
+    await supabase.from('profiles').update({
+      full_name: profile.name,
+      company: profile.company
+    }).eq('id', currentUser.id);
+    
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const handleSaveAiConfig = (e) => {
+    e.preventDefault();
+    localStorage.setItem('deload_ai_config', JSON.stringify(aiConfig));
+    setIsAiConfigSaved(true);
+    setTimeout(() => setIsAiConfigSaved(false), 2000);
   };
 
   return (
@@ -41,7 +93,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[600px] flex overflow-hidden transform transition-all relative">
         
         {/* Sidebar */}
-        <div className="w-48 bg-grey-light border-r border-grey-light p-4 flex flex-col space-y-2">
+        <div className="w-56 bg-grey-light border-r border-grey-light p-4 flex flex-col space-y-2">
           <h2 className="font-serif text-xl font-semibold mb-4 px-2">Settings</h2>
           
           <button 
@@ -58,6 +110,14 @@ export default function SettingsModal({ onClose, onOpenProject }) {
           >
             <User className="w-4 h-4" />
             <span>Profile</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('aiConfig')}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'aiConfig' ? 'bg-grey-light text-black' : 'text-taupe hover:bg-grey-light hover:text-black'}`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>AI Configuration</span>
           </button>
           
           <button 
@@ -145,16 +205,74 @@ export default function SettingsModal({ onClose, onOpenProject }) {
             </div>
           )}
 
+          {activeTab === 'aiConfig' && (
+            <div className="animate-in fade-in duration-300">
+              <h3 className="text-xl font-semibold mb-6">AI Configuration</h3>
+              <form onSubmit={handleSaveAiConfig} className="max-w-md space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">AI Provider</label>
+                  <select 
+                    value={aiConfig.provider}
+                    onChange={(e) => setAiConfig({...aiConfig, provider: e.target.value})}
+                    className="w-full px-4 py-2 bg-white border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
+                  >
+                    <option value="local">Local Ollama</option>
+                    <option value="cloud">Cloud API (Groq)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">API Endpoint</label>
+                  <input 
+                    type="text" 
+                    value={aiConfig.endpoint}
+                    onChange={(e) => setAiConfig({...aiConfig, endpoint: e.target.value})}
+                    className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Model Name</label>
+                  <input 
+                    type="text" 
+                    value={aiConfig.model}
+                    onChange={(e) => setAiConfig({...aiConfig, model: e.target.value})}
+                    className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
+                  />
+                </div>
+                {aiConfig.provider === 'cloud' && (
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">API Key</label>
+                    <input 
+                      type="password" 
+                      value={aiConfig.apiKey}
+                      onChange={(e) => setAiConfig({...aiConfig, apiKey: e.target.value})}
+                      className="w-full px-4 py-2 bg-grey-light border border-grey-light rounded-md focus:outline-none focus:border-taupe text-sm"
+                    />
+                  </div>
+                )}
+                <div className="pt-4 flex items-center space-x-4">
+                  <button type="submit" className="primary-button !min-h-10 !py-2 !px-6">
+                    Save AI Settings
+                  </button>
+                  {isAiConfigSaved && <span className="text-sm text-green-600 font-medium">Saved!</span>}
+                </div>
+              </form>
+            </div>
+          )}
+
           {activeTab === 'history' && (
             <div className="animate-in fade-in duration-300 flex flex-col h-full">
               <h3 className="text-xl font-semibold mb-6">Project History</h3>
               <div className="space-y-3 overflow-y-auto pr-2 pb-20">
-                {MOCK_PROJECTS.map((project) => (
+                {isLoadingProjects ? (
+                  <p className="text-taupe text-sm">Loading projects...</p>
+                ) : projects.length === 0 ? (
+                  <p className="text-taupe text-sm">No project history found.</p>
+                ) : projects.map((project) => (
                   <button
                     key={project.id}
                     onClick={() => {
                       onClose();
-                      onOpenProject(project);
+                      onOpenProject({ ...project, companyName: profile.company });
                     }}
                     className="flex items-center w-full p-4 border border-grey-light rounded-xl hover:border-black hover:shadow-sm transition-all duration-300 text-left bg-white group"
                   >
@@ -163,7 +281,7 @@ export default function SettingsModal({ onClose, onOpenProject }) {
                     </div>
                     <div>
                       <h4 className="font-medium text-black truncate">{project.name}</h4>
-                      <p className="text-xs text-taupe">{project.timestamp}</p>
+                      <p className="text-xs text-taupe">{new Date(project.created_at).toLocaleDateString()}</p>
                     </div>
                   </button>
                 ))}
